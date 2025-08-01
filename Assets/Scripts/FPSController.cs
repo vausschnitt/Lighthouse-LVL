@@ -21,6 +21,7 @@ public class FPSController : MonoBehaviour
 
     [Header("Pickup Settings")]
     public float pickupRange = 2f;
+    public PickupCounterManager pickupCounter;
 
     private CharacterController controller;
     private Vector3 velocity;
@@ -57,6 +58,8 @@ public class FPSController : MonoBehaviour
         if (isCrouching) currentSpeed = crouchSpeed;
 
         Vector3 move = transform.right * x + transform.forward * z;
+        move = Vector3.ClampMagnitude(move, 1f); // Normalize to avoid diagonal speed boost
+
         controller.Move(move * currentSpeed * Time.deltaTime);
 
         if (Input.GetButtonDown("Jump") && isGrounded && !isCrouching)
@@ -67,6 +70,7 @@ public class FPSController : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
+
 
     void HandleMouseLook()
     {
@@ -109,9 +113,9 @@ public class FPSController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.E))
         {
             Ray ray = new Ray(playerCamera.position, playerCamera.forward);
-            Debug.DrawRay(ray.origin, ray.direction * pickupRange, Color.green, 1f); // VISUAL DEBUG
+            Debug.DrawRay(ray.origin, ray.direction * pickupRange, Color.green, 1f);
 
-            int layerMask = ~LayerMask.GetMask("Player"); // Ignore the "Player" layer
+            int layerMask = ~LayerMask.GetMask("Player");
             if (Physics.Raycast(ray, out RaycastHit hit, pickupRange, layerMask))
             {
                 Debug.Log("Raycast hit: " + hit.collider.name);
@@ -120,6 +124,16 @@ public class FPSController : MonoBehaviour
                 {
                     Debug.Log("Picking up: " + hit.collider.name);
                     Destroy(hit.collider.gameObject);
+
+                    //  Register pickup
+                    if (pickupCounter != null)
+                    {
+                        pickupCounter.RegisterPickup();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("PickupCounterManager is not assigned!");
+                    }
                 }
             }
             else
@@ -128,5 +142,6 @@ public class FPSController : MonoBehaviour
             }
         }
     }
+
 
 }
